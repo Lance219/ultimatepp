@@ -1,3 +1,4 @@
+
 struct MemoryOptions { // sizes are in KB
 	int master_block; // master block size
 	int sys_block_limit; // > that this: allocate directly from the system

@@ -123,4 +123,40 @@ void Bits::Serialize(Stream& s)
 	s.SerializeRaw(bp, dwords);
 }
 
+void * DoRawAlloc(int& n, size_t szT)
+{
+	size_t sz0 = n * szT;
+	size_t sz = sz0;
+	void *q = MemoryAllocSz(sz);
+	n += (int)((sz - sz0) / szT);
+	return q;
+}
+
+//template <class T>
+//bool DoReAlloc(int newalloc, void *& vector,
+//	int items, size_t szT, void (*cpy)(void *, const void*, size_t))
+bool DoReAlloc(int newalloc, Vector<void*>& vec,
+	size_t szT,void (*cpy)(void *, const void *, size_t))
+{
+	ASSERT(newalloc >= vec.items);
+	size_t sz0 = (size_t)newalloc * szT;
+	size_t sz = sz0;
+	void *newvector;
+	bool  alloced = true;
+	if(MemoryTryRealloc(vec.vector, sz)) {
+		newvector = vec.vector;
+		vec.vector = NULL;
+		alloced = false;
+	}
+	else
+		newvector = newalloc ? MemoryAllocSz(sz) : NULL;
+	vec.alloc = newalloc == INT_MAX ? INT_MAX // maximum alloc reached
+	        : (int)((sz - sz0) / szT + newalloc); // adjust alloc to real memory size
+	if(vec.vector && newvector)
+		cpy(newvector, vec.vector, vec.items);
+	vec.vector = (void**)newvector;
+	return alloced;
+}
+
+
 }

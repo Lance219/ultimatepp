@@ -94,38 +94,38 @@ inline void StreamContainer(Stream& s, Vector<double>& cont)
 	StreamContainerRaw(s, cont);
 }
 
-template <class T>
-T * Vector<T>::RawAlloc(int& n)
-{
-	size_t sz0 = n * sizeof(T);
-	size_t sz = sz0;
-	void *q = MemoryAllocSz(sz);
-	n += (int)((sz - sz0) / sizeof(T));
-	return (T *)q;
-}
+//template <class T>
+//T * Vector<T>::RawAlloc(int& n)
+//{
+//	size_t sz0 = n * sizeof(T);
+//	size_t sz = sz0;
+//	void *q = MemoryAllocSz(sz);
+//	n += (int)((sz - sz0) / sizeof(T));
+//	return (T *)q;
+//}
 
-template <class T>
-bool Vector<T>::ReAlloc(int newalloc)
-{
-	ASSERT(newalloc >= items);
-	size_t sz0 = (size_t)newalloc * sizeof(T);
-	size_t sz = sz0;
-	void *newvector;
-	bool  alloced = true;
-	if(MemoryTryRealloc(vector, sz)) {
-		newvector = vector;
-		vector = NULL;
-		alloced = false;
-	}
-	else
-		newvector = newalloc ? MemoryAllocSz(sz) : NULL;
-	alloc = newalloc == INT_MAX ? INT_MAX // maximum alloc reached
-	        : (int)((sz - sz0) / sizeof(T) + newalloc); // adjust alloc to real memory size
-	if(vector && newvector)
-		memcpy_t((T *)newvector, vector, items);
-	vector = (T *)newvector;
-	return alloced;
-}
+//template <class T>
+//bool Vector<T>::ReAlloc(int newalloc)
+//{
+//	ASSERT(newalloc >= items);
+//	size_t sz0 = (size_t)newalloc * sizeof(T);
+//	size_t sz = sz0;
+//	void *newvector;
+//	bool  alloced = true;
+//	if(MemoryTryRealloc(vector, sz)) {
+//		newvector = vector;
+//		vector = NULL;
+//		alloced = false;
+//	}
+//	else
+//		newvector = newalloc ? MemoryAllocSz(sz) : NULL;
+//	alloc = newalloc == INT_MAX ? INT_MAX // maximum alloc reached
+//	        : (int)((sz - sz0) / sizeof(T) + newalloc); // adjust alloc to real memory size
+//	if(vector && newvector)
+//		memcpy_t((T *)newvector, vector, items);
+//	vector = (T *)newvector;
+//	return alloced;
+//}
 
 template <class T>
 void Vector<T>::ReAllocF(int newalloc)

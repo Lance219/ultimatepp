@@ -291,24 +291,33 @@ void memcpy128(void *p, const void *q, size_t count)
 		Copy128(0);
 }
 
-template <class T>
-void memcpy_t(void *t, const T *s, size_t count)
+
+
+
+template<size_t sz>
+inline void memcpy_sz(void *t, const void * s, size_t count)
 {
 #ifdef CPU_X86
-	if((sizeof(T) & 15) == 0)
-		memcpy128(t, s, count * (sizeof(T) >> 4));
+	if constexpr ((sz & 15) == 0)
+		memcpy128(t, s, count * (sz >> 4));
 	else
-	if((sizeof(T) & 7) == 0)
-		memcpy64(t, s, count * (sizeof(T) >> 3));
+	if constexpr ((sz & 7) == 0)
+		memcpy64(t, s, count * (sz >> 3));
 	else
 #endif
-	if((sizeof(T) & 3) == 0)
-		memcpy32(t, s, count * (sizeof(T) >> 2));
+	if constexpr ((sz & 3) == 0)
+		memcpy32(t, s, count * (sz >> 2));
 	else
-	if((sizeof(T) & 1) == 0)
-		memcpy16(t, s, count * (sizeof(T) >> 1));
+	if constexpr ((sz & 1) == 0)
+		memcpy16(t, s, count * (sz >> 1));
 	else
-		memcpy8(t, s, count * sizeof(T));
+		memcpy8(t, s, count * sz);
+}
+
+template <class T>
+inline void memcpy_t(void *t, const T *s, size_t count)
+{
+	memcpy_sz<sizeof(T)>(t, s, count);
 }
 
 force_inline

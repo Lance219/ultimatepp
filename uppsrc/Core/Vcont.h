@@ -163,14 +163,28 @@ One<T> MakeOne(Args&&... args) {
 
 template <class U> class Index;
 
+template <class T> class Vector;
+
+void   *DoRawAlloc(int& n, size_t szT);
+bool DoReAlloc(int newalloc, Vector<void*>& vec,
+	size_t szT,void (*cpy)(void *, const void *, size_t)
+);
+
+
 template <class T>
 class Vector : public MoveableAndDeepCopyOption< Vector<T> > {
+
+friend bool DoReAlloc(int newalloc, Vector<void*>& vec,
+		size_t szT, void (*cpy)(void *, const void *, size_t));
+
 	T       *vector;
 	int      items;
 	int      alloc;
 
 	static void    RawFree(T *ptr)            { if(ptr) MemoryFree(ptr); }
-	static T      *RawAlloc(int& n);
+	static T      *RawAlloc(int& n){
+		return (T *)DoRawAlloc(n, sizeof(T));
+	}
 
 	void     Zero()                          { vector = NULL; items = alloc = 0; }
 	void     Pick(Vector<T>&& v);
@@ -180,7 +194,12 @@ class Vector : public MoveableAndDeepCopyOption< Vector<T> > {
 	void     Free();
 	void     __DeepCopy(const Vector& src);
 	T&       Get(int i) const                { ASSERT(i >= 0 && i < items); return vector[i]; }
-	bool     ReAlloc(int alloc);
+	bool     ReAlloc(int alloc){
+		void (*cpy)(void *, const void *, size_t) = memcpy_sz<sizeof(T)>;
+
+		return DoReAlloc(alloc, reinterpret_cast<Vector<void*>&>(*this), sizeof(T), cpy );
+	}
+	
 	void     ReAllocF(int alloc);
 	bool     GrowSz();
 	void     GrowF();
