@@ -382,7 +382,7 @@ CurrentFileContext AssistEditor::CurrentContext(int pos)
 	cfx.filename = cfx.real_filename = NormalizePath(theide->editfile);
 	cfx.includes = theide->GetCurrentIncludePath();
 	cfx.defines = theide->GetCurrentDefines();
-	if(!IsView() && GetLength() < 4000000 && cfx.filename != CacheFile("CurrentContext.cpp")) {
+	if(!IsView() && GetLength() < 4000000 && cfx.filename != CacheFile("CurrentContext.txt")) {
 		cfx.content = Get(0, min(GetLength(), pos));
 		if(!IsSourceFile(cfx.filename)) {
 			if(master_source.GetCount()) {
@@ -397,7 +397,7 @@ CurrentFileContext AssistEditor::CurrentContext(int pos)
 		}
 	}
 	if(AssistDiagnostics)
-		SaveFile(CacheFile("CurrentContext.cpp"), cfx.content);
+		SaveFile(CacheFile("CurrentContext.txt"), cfx.content);
 	return cfx;
 }
 
@@ -419,6 +419,7 @@ void AssistEditor::SetAnnotations(const CppFileInfo& f)
 	if(!navigator_global)
 		Search();
 	SyncCursor();
+	SyncTip();
 }
 
 bool InFileIncludedFrom(const String& s)
@@ -447,15 +448,16 @@ void AssistEditor::SyncCurrentFile(const CurrentFileContext& cfx)
 						if(d.pos.y < 0 || InFileIncludedFrom(d.text))
 							return;
 						bool error = true;
-						int pos = GetPos(d.pos.y, d.pos.x);
-						if(IsHeaderFile(path) && pos > GetLength() - 100) { // ignore errors after the end of header (e.g. missing })
+						if(!IsSourceFile(path) && d.pos.y > GetLineCount() - 10) { // ignore errors after the end of header (e.g. missing })
+							int line = d.pos.y;
 							error = false;
-							while(pos < GetLength()) {
-								if(GetChar(pos) > ' ') {
+							int pos = d.pos.x;
+							while(line < GetLineCount()) {
+								String l = GetUtf8Line(line++);
+								String s = TrimBoth(l);
+								if(s.GetCount() && pos < l.GetCount() && *s != '#')
 									error = true;
-									break;
-								}
-								pos++;
+								pos = 0;
 							}
 						}
 						if(!error)
@@ -486,6 +488,57 @@ void AssistEditor::SyncCurrentFile(const CurrentFileContext& cfx)
 		CppFileInfo none;
 		SetAnnotations(none);
 	}
+}
+
+void AssistEditor::SetQTF(CodeEditor::MouseTip& mt, const String& qtf)
+{
+	mt.value = qtf;
+	mt.display = &QTFDisplay();
+
+	RichText txt = ParseQTF(qtf);
+	txt.ApplyZoom(GetRichTextStdScreenZoom());
+	mt.sz.cx = min(mt.sz.cx, txt.GetWidth() + DPI(2));
+	mt.sz.cy = txt.GetHeight(Upp::Zoom(1, 1), mt.sz.cx) + DPI(2);
+}
+
+bool AssistEditor::DelayedTip(CodeEditor::MouseTip& mt)
+{
+	if(GetChar(mt.pos) <= 32)
+		return false;
+	String name;
+	String ref_id = theide->GetRefId(mt.pos, name);
+	if(ref_id.GetCount() == 0)
+		return false;
+
+	AnnotationItem m, m1;
+
+	for(const auto& f : ~CodeIndex())
+		for(const AnnotationItem& q : f.value.items)
+			if(q.id == ref_id)
+				(q.definition ? m1 : m) = q;
+	
+	if(m.id.GetCount() == 0)
+		m = m1;
+	
+	if(m.id.GetCount() == 0)
+		return false;
+	
+	String qtf = "[g ";
+	if(m.nest.GetCount())
+		qtf << "[@b* \1" << m.nest << "::\1]&";
+
+	String tl = BestTopic(GetRefLinks(ref_id));
+	if(tl.GetCount()) {
+		RichText txt = GetCodeTopic(tl, ref_id);
+		qtf << AsQTF(txt);
+	}
+	else
+		qtf << SignatureQtf(m.name, m.pretty);
+
+	SetQTF(mt, qtf);
+	mt.background = AdjustIfDark(Color(245, 255, 221));
+
+	return true;
 }
 
 bool AssistEditor::AssistTip(CodeEditor::MouseTip& mt)
@@ -527,13 +580,9 @@ bool AssistEditor::AssistTip(CodeEditor::MouseTip& mt)
 				qtf << "\1" << d.text << "\1";
 				qtf << "]";
 			}
-			mt.value = qtf;
-			mt.display = &QTFDisplay();
-
-			RichText txt = ParseQTF(qtf);
-			txt.ApplyZoom(GetRichTextStdScreenZoom());
-			mt.sz.cx = min(4 * GetWorkArea().GetWidth() / 5, txt.GetWidth()) + DPI(2);
-			mt.sz.cy = txt.GetHeight(Upp::Zoom(1, 1), mt.sz.cx) + DPI(2);
+			
+			SetQTF(mt, qtf);
+			mt.background = AdjustIfDark(Color(255, 234, 207));
 			return true;
 		}
 	}
@@ -596,11 +645,24 @@ void AssistEditor::Assist(bool macros)
 	int line = GetLinePos(pos);
 	if(cfx.content.GetCount())
 		StartAutoComplete(cfx, line + cfx.line_delta + 1, pos + 1, macros, [=](const Vector<AutoCompleteItem>& items) {
+			bool has_globals = false;
+			bool has_macros = false;
+			for(const AutoCompleteItem& m : items) {
+				if(m.kind == CXCursor_MacroDefinition)
+					has_macros = true;
+				else
+				if(IsNull(m.parent))
+					has_globals = true;
+			}
+			if(has_macros)
+				assist_type.Add("<macros>");
+			if(has_globals)
+				assist_type.Add(Null);
 			for(const AutoCompleteItem& m : items) {
 				AssistItem& f = assist_item.Add();
 				(AutoCompleteItem&)f = m;
 				f.uname = ToUpper(f.name);
-				f.typei = assist_type.FindAdd(f.parent);
+				f.typei = assist_type.FindAdd(f.kind == CXCursor_MacroDefinition ? "<macros>" : f.parent);
 			}
 			PopUpAssist();
 		});
@@ -647,7 +709,7 @@ void AssistEditor::PopUpAssist(bool auto_insert)
 			if(s[0] == '<')
 				type.Add(AttrText(s).Ink(SColorMark()));
 			else
-				type.Add(Nvl(s, "<globals>"));
+				type.Add(s);
 		}
 		popup.NoZoom();
 	}

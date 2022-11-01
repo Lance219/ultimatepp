@@ -149,6 +149,7 @@ void Indexer::IndexerThread()
 
 			clang.Parse(job.path, job.blitz, job.includes, job.defines,
 			            CXTranslationUnit_KeepGoing|
+		                CXTranslationUnit_DetailedPreprocessingRecord|
 			            (job.blitz.GetCount() ? 0 : PARSE_FILE));
 
 			if(Thread::IsShutdownThreads())
@@ -183,7 +184,6 @@ void Indexer::IndexerThread()
 				(CppFileInfo&)f = pick(m.value);
 				f.time = job.file_times.Get(path, Time::Low());
 				LLOG("Storing " << path);
-				// TODO: Compress ?
 				SaveChangedFile(CachedAnnotationPath(path, f.defines, f.includes, job.master_files.Get(path, Null)), StoreAsString(f), true);
 				GuiLock __;
 				CodeIndex().GetAdd(path) = pick(f);

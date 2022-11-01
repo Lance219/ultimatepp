@@ -106,6 +106,7 @@ String ClangCursorInfo::Id()
 {
 	if(!hasid) {
 		String m;
+		int q = 0;
 		switch(cursorKind) {
 		case CXCursor_StructDecl:
 		case CXCursor_ClassDecl:
@@ -115,24 +116,23 @@ String ClangCursorInfo::Id()
 		case CXCursor_EnumDecl:
 			m = Type();
 			break;
-		case CXCursor_FunctionTemplate:
 		case CXCursor_FunctionDecl:
 		case CXCursor_Constructor:
 		case CXCursor_Destructor:
+		case CXCursor_FunctionTemplate:
 		case CXCursor_CXXMethod:
 #ifdef UBUNTU2204_WORKAROUND
-			{
-				String h = RawId();
-				int q = 0;
-				while(findarg(h[q], ':', '*', '&', '(', ')', ' ') >= 0)
-					q++;
-				m = Scope();
-				m.Cat(~h + q, h.GetCount() - q);
-			}
+			m = CleanupId(RawId());
+			while(findarg(m[q], ':', '*', '&', '(', ')', ' ') >= 0)
+				q++;
+			id = Scope();
+			id.Cat(~m + q, m.GetCount() - q);
+			hasid = true;
+			return id;
 #else
 			m = RawId();
-#endif
 			break;
+#endif
 		case CXCursor_ClassTemplate:
 		case CXCursor_VarDecl:
 		case CXCursor_FieldDecl:
@@ -142,8 +142,9 @@ String ClangCursorInfo::Id()
 			m << Scope() << "operator " << Type();
 			break;
 		case CXCursor_MacroDefinition:
-			m = Name();
-			break;
+			id = Name();
+			hasid = true;
+			return id;
 		case CXCursor_EnumConstantDecl:
 			m << Scope() << Name();
 			break;
