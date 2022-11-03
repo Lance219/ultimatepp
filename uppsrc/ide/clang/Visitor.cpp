@@ -135,6 +135,7 @@ String ClangCursorInfo::Id()
 #endif
 		case CXCursor_ClassTemplate:
 		case CXCursor_VarDecl:
+		case CXCursor_ParmDecl:
 		case CXCursor_FieldDecl:
 			m << Scope() << Name();
 			break;
@@ -335,6 +336,7 @@ bool ClangVisitor::ProcessNode(CXCursor cursor)
 		ReferenceItem rm;
 		rm.pos = sl.pos;
 		rm.id = ref_ci.Id();
+		rm.ref_pos = ref_loc.pos;
 		Index<ReferenceItem>& rd = ref_done.GetAdd(ref_loc.path);
 		if(rm.id.GetCount() && rd.Find(rm) < 0) {
 			rd.Add(rm);
@@ -400,7 +402,7 @@ void ClangVisitor::Do(CXTranslationUnit tu)
 	initialized = true;
 	clang_visitChildren(cursor, clang_visitor, this);
 
-	for(CppFileInfo& f : info) { // sort by line because macros are first TODO move it after macros are by HDepend
+	for(CppFileInfo& f : info) { // sort by line because macros are first
 		Sort(f.items, [](const AnnotationItem& a, const AnnotationItem& b) {
 			return CombineCompare(a.pos.y, b.pos.y)(a.pos.x, b.pos.x) < 0;
 		});
