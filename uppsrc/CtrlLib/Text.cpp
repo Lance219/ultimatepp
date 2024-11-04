@@ -375,7 +375,7 @@ void TextCtrl::ViewLoading()
 		
 		if(msecs(start) > 20) {
 			view_loading_pos = view->GetPos();
-			PostCallback([=] { ViewLoading(); });
+			PostCallback([CAP_BY_VAL_X_THIS] { ViewLoading(); });
 			WhenViewMapping(view_loading_pos);
 			break;
 		}

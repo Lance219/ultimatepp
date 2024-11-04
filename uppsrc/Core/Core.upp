@@ -26,9 +26,9 @@ static_library(ANDROID) cpufeatures;
 link(GCC POSIX STACKTRACE) -rdynamic;
 
 file
-	cppversionswitcher.h,
 	Core.h options(BUILDER_OPTION) PCH,
 	config.h,
+	stdversionstuff.h,
 	Defs.h,
 	Ops.h,
 	Fn.h,

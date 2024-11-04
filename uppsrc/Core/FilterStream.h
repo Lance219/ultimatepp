@@ -36,7 +36,7 @@ public:
 	void Set(Stream& in_, F& filter) {
 		Init();
 		in = &in_;
-		filter.WhenOut = [=](const void *ptr, int size) { Out(ptr, size); };
+		filter.WhenOut = [CAP_BY_VAL_X_THIS](const void *ptr, int size) { Out(ptr, size); };
 		Filter = [&filter](const void *ptr, int size) { filter.Put(ptr, size); };
 		End = [&filter] { filter.End(); };
 	}

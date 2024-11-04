@@ -1,6 +1,15 @@
 #pragma once
 
+// to handle [=] semantic change after c++17
+//
+#if __cplusplus <= 201703L
+#define CAP_BY_VAL_X_THIS =
+#else
+#define CAP_BY_VAL_X_THIS =,this
+#endif
+
 // Macro for constexpr, to support in mixed 03/0x mode.
+//
 #ifndef _UPPXX17_CONSTEXPR
 # if __cplusplus >= 201703L
 #  define _UPPXX17_CONSTEXPR constexpr
@@ -9,11 +18,6 @@
 # endif
 #endif
 
-#if __cplusplus <= 201703L
-#define CAP_VALUE_AND_THIS =
-#else
-#define CAP_VALUE_AND_THIS =,this
-#endif
 
 #ifndef _UPPXX20_CONSTEXPR
 # if __cplusplus >= 202002L

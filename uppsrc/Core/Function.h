@@ -61,7 +61,7 @@ public:
 	Function(Function&& src)                   { Pick(pick(src)); }
 	Function& operator=(Function&& src)        { if(&src != this) { Free(ptr); ptr = src.ptr; src.ptr = NULL; } return *this; }
 	
-	Function Proxy() const                     { return [=] (ArgTypes... args) { return (*this)(args...); }; }
+	Function Proxy() const                     { return [CAP_BY_VAL_X_THIS] (ArgTypes... args) { return (*this)(args...); }; }
 
 	template <class F>
 	Function& operator<<(F fn)                 { if(!ptr) { Pick(pick(fn)); return *this; }

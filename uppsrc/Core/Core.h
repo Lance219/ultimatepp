@@ -3,7 +3,7 @@
 
 #define UPP_VERSION 0x20240900
 
-#include "cppversionswitcher.h"
+#include "stdversionstuff.h"
 
 #ifndef flagMT
 #define flagMT // MT is now always on

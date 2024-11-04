@@ -65,8 +65,8 @@ AddressBook::AddressBook()
 		});
 	});
 #else
-	menu.Set([=](Bar& bar) {
-		bar.Sub("File", [=](Bar& bar) {
+	menu.Set([CAP_BY_VAL_X_THIS](Bar& bar) {
+		bar.Sub("File", [CAP_BY_VAL_X_THIS](Bar& bar) {
 			bar.Add("Open..", CtrlImg::open(), THISFN(Open));
 			bar.Add("Save", CtrlImg::save(), THISFN(Save));
 			bar.Add("Save as..", CtrlImg::save_as(), THISFN(SaveAs));

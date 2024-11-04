@@ -278,7 +278,7 @@ void RichEdit::StdBar(Bar& menu)
 					if(true) {
 						Vector<String> h = SpellerFindCloseWords(fixedlang ? fixedlang : formatinfo.language, w.ToString(), 10);
 						for(String s : h)
-							menu.Add(s, [=] {
+							menu.Add(s, [CAP_BY_VAL_X_THIS] {
 								int pos, count;
 								GetWordAtCursorPos(pos, count);
 								if(count) {
