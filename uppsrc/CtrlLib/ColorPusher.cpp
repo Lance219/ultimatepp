@@ -18,13 +18,13 @@ void ColorPusher::Paint(Draw& w)
 		           voidtext, StdFont(), SColorText());
 	else {
 		auto DrawColor = [&](int x, int y, int cx, int cy) {
-			if(color.GetSpecial() >= 0) {
+			if(color.GetSpecial() >= 0 && color.GetSpecial() < 18) {
 				Color c = RealizeColor(color);
 				w.DrawRect(x, y, cx / 2, cy, c);
 				w.DrawRect(x + cx / 2, y, cx - cx / 2, cy, DarkTheme(c));
 			}
 			else
-				w.DrawRect(x, y, cx, cy, color);
+				w.DrawRect(x, y, cx, cy, colors.IsDarkContent() ? DarkTheme(color) : color);
 		};
 		if(withtext || withhex) {
 			DrawColor(2, 2, sz.cy - 4, sz.cy - 4);
@@ -145,7 +145,7 @@ void ColorButton::Paint(Draw& w)
 	if(IsNull(color))
 		w.DrawImage(center.x + push, center.y + push, nullimage);
 	else
-		w.DrawImage(center.x + push, center.y + push, image, color);
+		w.DrawImage(center.x + push, center.y + push, image, colors.IsDarkContent() ? DarkTheme(color) : color);
 	w.DrawImage(center.x + push, center.y + push, staticimage);
 }
 

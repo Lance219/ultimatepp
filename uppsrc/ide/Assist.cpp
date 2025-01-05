@@ -121,6 +121,7 @@ void AssistEditor::CloseAssist()
 		popup.Close();
 	if(annotation_popup.IsOpen())
 		annotation_popup.Close();
+	assist_item_ndx.Clear();
 	assist_item.Clear();
 	CloseTip();
 }
@@ -1060,12 +1061,9 @@ bool AssistEditor::Key(dword key, int count)
 				return true;
 			}
 		}
-		if(key == K_ENTER && assist.IsCursor()) {
-			AssistInsert();
-			return true;
-		}
-		if(key == K_TAB && !assist.IsCursor() && assist.GetCount()) {
-			assist.GoBegin();
+		if(findarg(key, K_ENTER, K_TAB) >= 0 && assist.GetCount()) {
+			if(!assist.IsCursor())
+				assist.GoBegin();
 			AssistInsert();
 			return true;
 		}
@@ -1076,7 +1074,7 @@ bool AssistEditor::Key(dword key, int count)
 	bool b = CodeEditor::Key(key, count);
 	if(b && search.HasFocus())
 		SetFocus();
-	if(IsReadOnly())
+	if(IsReadOnly() || IsRectSelection())
 		return b;
 	if(assist.IsOpen()) {
 		bool (*test)(int c) = include_assist ? isincludefnchar : isaid;

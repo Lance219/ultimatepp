@@ -80,7 +80,7 @@ HANDLE XpWidget(int widget)
 	return xp_widget_handle[widget];
 }
 
-Image XpImage0(int widget, int part, int state, Color color, Size sz)
+Image XpImage0(int widget, int part, int state, Color color, Size sz, int margin = 0)
 {
 	HANDLE theme = XpWidget(widget);
 	if(!theme)
@@ -91,10 +91,11 @@ Image XpImage0(int widget, int part, int state, Color color, Size sz)
 	Color c = White;
 	Image m[2];
 	for(int q = 0; q < 2; q++) {
-		ImageDraw iw(sz);
+		ImageDraw iw(sz + 2 * margin);
 		iw.DrawRect(sz, Nvl(color, c));
 		HDC hdc = iw.BeginGdi();
 		Rect r(sz);
+		r.Offset(margin, margin);
 		XpTheme().DrawThemeBackground(theme, hdc, part, state, r, NULL);
 		iw.EndGdi();
 		m[q] = iw;
@@ -380,7 +381,7 @@ bool IsSystemThemeDark()
 	return GetEnv("UPP_DARKMODE__") == "1" ? !b : b;
 }
 
-void ChHostSkin()
+void ChHostSkin0()
 {
 	if(Ctrl::IsUHDEnabled()) {
 		HRESULT (STDAPICALLTYPE *SetProcessDpiAwareness)(int);
@@ -394,8 +395,6 @@ void ChHostSkin()
 				(*SetProcessDPIAware)();
 		}
 	}
-
-	sEmulateDarkTheme = Ctrl::IsDarkThemeEnabled() && IsSystemThemeDark() && !IsDark(Color::FromCR(GetSysColor(COLOR_WINDOW)));
 
 	NONCLIENTMETRICSW ncm;
 #if (WINVER >= 0x0600 && !defined(__MINGW32_VERSION))
@@ -667,6 +666,8 @@ void ChHostSkin()
 				s.hthumb[i] = ChLookWith(RawToValue(e), XpImage(XP_SCROLLBAR, SBP_GRIPPERHORZ, 1));
 				e.part = SBP_THUMBBTNVERT;
 				s.vthumb[i] = ChLookWith(RawToValue(e), XpImage(XP_SCROLLBAR, SBP_GRIPPERVERT, 1));
+				if(IsWin11())
+					s.arrowsize = 0;
 			}
 			Color paper = i == 3 ? SColorFace : SColorPaper;
 			Image m = XpImage(XP_COMBOBOX, CP_DROPDOWNBUTTON, CBXS_NORMAL + i, paper, Size(32, 32));
@@ -740,6 +741,24 @@ void ChHostSkin()
 	}
 	else
 		ChClassicSkin();
+}
+
+void ChHostSkin()
+{
+	sEmulateDarkTheme = Ctrl::IsDarkThemeEnabled() && IsSystemThemeDark() && !IsDark(Color::FromCR(GetSysColor(COLOR_WINDOW)));
+	ChHostSkin0();
+}
+
+void ChHostSkinLight()
+{
+	sEmulateDarkTheme = false;
+	ChHostSkin0();
+}
+
+void ChHostSkinDark()
+{
+	sEmulateDarkTheme = true;
+	ChHostSkin0();
 }
 
 }
